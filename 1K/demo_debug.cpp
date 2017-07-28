@@ -45,7 +45,7 @@ static time_t shaderFileModificationDate = 0;
 static GLuint currentShader = 0;
 
 static const float initialOffset = -1.0f;
-static const float step = 0.002f;
+static const float step = 0.01f;
 static float offset = initialOffset;
 
 //////////////////////////////////////////////////////////////////////////
@@ -220,8 +220,16 @@ static bool load_shader()
     int result;
     char info[maxMessageLen];
 
-    glGetObjectParameteriv(currentShader, GL_OBJECT_LINK_STATUS_ARB, &result);
-    glGetInfoLog(currentShader, maxMessageLen, NULL, (char*)info);
+    glGetObjectParameteriv(newShader, GL_OBJECT_COMPILE_STATUS_ARB, &result);
+    glGetInfoLog(newShader, maxMessageLen, NULL, (char*)info);
+    if (!result)
+    {
+        OutputDebugStringA(info);
+        return false;
+    }
+
+    glGetObjectParameteriv(newShader, GL_OBJECT_LINK_STATUS_ARB, &result);
+    glGetInfoLog(newShader, maxMessageLen, NULL, (char*)info);
     if (!result)
     {
         OutputDebugStringA(info);
@@ -233,6 +241,7 @@ static bool load_shader()
         glDeleteShader(currentShader);
     }
 
+    OutputDebugStringA("NEW SHADER LOADED\n");
     currentShader = newShader;
     return true;
 }

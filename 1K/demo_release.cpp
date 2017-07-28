@@ -79,7 +79,7 @@ void entrypoint(void)
 
 static PIXELFORMATDESCRIPTOR pfd =
 {
-    sizeof(PIXELFORMATDESCRIPTOR), 1, PFD_SUPPORT_OPENGL, PFD_TYPE_RGBA,
+    sizeof(PIXELFORMATDESCRIPTOR), 1, PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW, PFD_TYPE_RGBA,
     32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PFD_MAIN_PLANE, 0, 0, 0, 0
 };
 
@@ -87,22 +87,26 @@ static PIXELFORMATDESCRIPTOR pfd =
 __declspec(align(16)) static __m128 gCoords = { -1.0f, -1.0f, -p0d99, 1.0f };
 __declspec(align(16)) static const __m128 gCoordsOffset = { p0d01, 0.0f, p0d01, 0.0f };
 
+static const char* windowClassName = "edit";
+static const char* glCreateShaderProgramvName = "glCreateShaderProgramv";
+static const char* glUseProgramName = "glUseProgram";
 
+/*
 // TODO rewrite in assembler
 __declspec(naked) void entrypoint()
 {
     {
         // create window and device context
-        const HDC hDC = GetDC(CreateWindowA("edit", 0, WS_POPUP | WS_VISIBLE | WS_MAXIMIZE, 0, 0, 0, 0, 0, 0, 0, 0));
+        const HDC hDC = GetDC(CreateWindowA(windowClassName, 0, WS_POPUP | WS_VISIBLE | WS_MAXIMIZE, 0, 0, 0, 0, 0, 0, 0, 0));
 
         // initialize OpenGL
         SetPixelFormat(hDC, ChoosePixelFormat(hDC, &pfd), &pfd);
         wglMakeCurrent(hDC, wglCreateContext(hDC));
 
         // init shader (requires OpenGL 4.1)
-        auto glCreateShaderProgramv = (PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv");
+        auto glCreateShaderProgramv = (PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress(glCreateShaderProgramvName);
         const GLuint prog = glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, (const GLchar**)&shader_glsl);
-        ((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(prog);
+        ((PFNGLUSEPROGRAMPROC)wglGetProcAddress(glUseProgramName))(prog);
 
         // rendering loop
         for (;;)
@@ -120,5 +124,92 @@ __declspec(naked) void entrypoint()
             if (GetAsyncKeyState(VK_ESCAPE))
                 ExitProcess(0);
         }
+    }
+}
+*/
+
+__declspec(naked)
+void entrypoint(void)
+{
+    __asm
+    {
+        xor eax, eax
+
+    create_window:
+        // arguments for CreateWindowExA
+        push eax    // 0
+        push eax    // 0
+        push eax    // 0
+        push eax    // 0
+        push eax    // 0
+        push eax    // 0
+        push eax    // 0
+        push eax    // 0
+        push WS_POPUP | WS_VISIBLE | WS_MAXIMIZE;
+        push eax    // 0
+        push windowClassName;
+        push eax    // 0
+        call CreateWindowExA
+
+    get_device_context:
+        push eax    // window handle (result of CreateWindowExA)
+        call GetDC
+        mov edi, eax // TODO
+
+    choose_pixel_format:
+        mov eax, offset pfd
+        push eax
+        push eax
+        push edi    // device context
+        call ChoosePixelFormat
+
+    set_pixel_format :
+        push eax
+        push edi    // device context
+        call SetPixelFormat
+
+    create_context:
+        push edi    // device context
+        call wglCreateContext
+
+        push eax
+        push edi    // device context
+        call wglMakeCurrent
+
+    load_shader:
+        push glCreateShaderProgramvName
+        call wglGetProcAddress
+
+        push offset shader_glsl
+        push 0x1
+        push GL_FRAGMENT_SHADER   
+        call eax    // call glCreateShaderProgramv
+
+        push eax    // shader program
+        push glUseProgramName
+        call wglGetProcAddress
+        call eax    // call glUseProgram
+
+    render_loop:
+        push offset gCoords + 0x8
+        push offset gCoords
+        call glRectfv
+
+        movaps xmm0, [gCoordsOffset]
+        addps xmm0, [gCoords]
+        movaps[gCoords], xmm0
+
+        push edi    // device context
+        call SwapBuffers
+
+        call glFlush
+    
+    keyboard_handling:
+        push 0x1B       // VK_ESCAPE
+        call GetAsyncKeyState
+        test ax, ax
+        jz render_loop
+
+        call ExitProcess
     }
 }

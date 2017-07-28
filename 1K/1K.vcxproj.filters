@@ -20,6 +20,15 @@
     <ClInclude Include="demo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="floats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="shader_code.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="demo_release.cpp">

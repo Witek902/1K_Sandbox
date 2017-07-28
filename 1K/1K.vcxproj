@@ -204,6 +204,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="demo.h" />
+    <ClInclude Include="floats.h" />
+    <ClInclude Include="glext.h" />
+    <ClInclude Include="shader_code.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
