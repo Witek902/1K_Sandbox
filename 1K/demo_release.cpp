@@ -92,8 +92,7 @@ static const char* glCreateShaderProgramvName = "glCreateShaderProgramv";
 static const char* glUseProgramName = "glUseProgram";
 
 /*
-// TODO rewrite in assembler
-__declspec(naked) void entrypoint()
+void entrypoint()
 {
     {
         // create window and device context
@@ -119,10 +118,10 @@ __declspec(naked) void entrypoint()
 
             // display
             glFlush();
-            SwapBuffers(hDC);
+            SwapBuffers(hDC);       
 
             if (GetAsyncKeyState(VK_ESCAPE))
-                ExitProcess(0);
+                break;
         }
     }
 }
@@ -133,7 +132,9 @@ void entrypoint(void)
 {
     __asm
     {
-        xor eax, eax
+        // EPIC HACK - exploit EAX=0 from previous code (crinkler decompressor)
+        // (restore if crashes)
+        // xor eax, eax
 
     create_window:
         // arguments for CreateWindowExA
@@ -153,18 +154,16 @@ void entrypoint(void)
 
     get_device_context:
         push eax    // window handle (result of CreateWindowExA)
-        call GetDC
-        mov edi, eax // TODO
+        call GetDC     
 
     choose_pixel_format:
+        mov edi, eax // store device context in EDI
         mov eax, offset pfd
-        push eax
-        push eax
-        push edi    // device context
-        call ChoosePixelFormat
-
-    set_pixel_format :
-        push eax
+        push eax    // pixel format for SetPixelFormat
+            push eax
+            push edi    // device context
+            call ChoosePixelFormat
+        push eax    // pixel format
         push edi    // device context
         call SetPixelFormat
 
@@ -177,32 +176,31 @@ void entrypoint(void)
         call wglMakeCurrent
 
     load_shader:
-        push glCreateShaderProgramvName
-        call wglGetProcAddress
-
         push offset shader_glsl
-        push 0x1
-        push GL_FRAGMENT_SHADER   
+        push 0x1    // num of shaders
+        push GL_FRAGMENT_SHADER
+            push glCreateShaderProgramvName
+            call wglGetProcAddress
         call eax    // call glCreateShaderProgramv
 
         push eax    // shader program
-        push glUseProgramName
-        call wglGetProcAddress
+            push glUseProgramName
+            call wglGetProcAddress
         call eax    // call glUseProgram
 
     render_loop:
+        
         push offset gCoords + 0x8
         push offset gCoords
         call glRectfv
 
+        push edi    // device context
+        call SwapBuffers
+        call glFlush
+
         movaps xmm0, [gCoordsOffset]
         addps xmm0, [gCoords]
         movaps[gCoords], xmm0
-
-        push edi    // device context
-        call SwapBuffers
-
-        call glFlush
     
     keyboard_handling:
         push 0x1B       // VK_ESCAPE
@@ -210,6 +208,7 @@ void entrypoint(void)
         test ax, ax
         jz render_loop
 
+        // we could return safely, but the process hangs somewhere in nvidia driver...
         call ExitProcess
     }
 }
