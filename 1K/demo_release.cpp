@@ -3,141 +3,33 @@
 #include "floats.h"
 #include "shader_code.h"
 
-/*
-// final color image
-unsigned int finalImage[IMAGE_SIZE * IMAGE_SIZE] = { 0 };
+#define WINDOW_WIDTH 1366
+#define WINDOW_HEIGHT 768
 
-//////////////////////////////////////////////////////////////////////////
-
-static const BITMAPINFO bmi =
-{
-    { sizeof(BITMAPINFOHEADER), IMAGE_SIZE, IMAGE_SIZE, 1, 32, BI_RGB, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0 },
-};
-
-static const char* windowClassName = "edit";
-
-__declspec(naked)
-void entrypoint(void)
-{
-    __asm
-    {
-        xor eax, eax;
-        mov ecx, IMAGE_SIZE;
-
-        // arguments for StretchDIBits
-        push 0x00CC0020; //SRCCOPY
-        push eax;        // 0 == DIB_RGB_COLORS
-        push offset bmi;
-        push offset finalImage;
-        push ecx;        // IMAGE_SIZE
-        push ecx;        // IMAGE_SIZE
-        push eax;        // 0
-        push eax;        // 0
-        push ecx;        // IMAGE_SIZE
-        push ecx;        // IMAGE_SIZE
-        push eax;        // 0
-        push eax;        // 0
-        // ...
-
-            // arguments for CreateWindowExA
-            push eax;    // 0
-            push eax;    // 0
-            push eax;    // 0
-            push eax;    // 0
-            push ecx;    // IMAGE_SIZE
-            push ecx;    // IMAGE_SIZE
-            push eax;    // 0
-            push eax;    // 0
-            push WS_VISIBLE | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN;
-            push eax;    // 0
-            push windowClassName;
-            push eax;    // 0
-            call CreateWindowExA;
-
-            push eax;    // return of CreateWindowExA
-            call GetDC;
-
-        // ...
-        push eax;        // return of GetDC (HDC)
-        call StretchDIBits;
-
-    label_loop:
-        push 0x1B;      // VK_ESCAPE
-        call GetAsyncKeyState;
-        test ax, ax;
-        jz label_loop;
-
-        ret
-    }
-    //HDC hDC = GetDC(CreateWindowExA(0, windowClassName, 0, WS_VISIBLE | WS_POPUP | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0, 0, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0));
-    //StretchDIBits(hDC, 0, 0, IMAGE_SIZE, IMAGE_SIZE, 0, 0, IMAGE_SIZE, IMAGE_SIZE, finalImage, &bmi, DIB_RGB_COLORS, SRCCOPY);
-    //do { } while (!GetAsyncKeyState(VK_ESCAPE));
-}
-
-*/
 
 static PIXELFORMATDESCRIPTOR pfd =
 {
-    sizeof(PIXELFORMATDESCRIPTOR), 1, PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW, PFD_TYPE_RGBA,
-    32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PFD_MAIN_PLANE, 0, 0, 0, 0
+    0, // HACK, should be sizeof(PIXELFORMATDESCRIPTOR),
+    0,
+    0, // will be PFD_SUPPORT_OPENGL
+    0, // PFD_TYPE_RGBA, 32, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, PFD_MAIN_PLANE, 0, 0, 0, 0
 };
 
-
-__declspec(align(16)) static __m128 gCoords = { -1.0f, -1.0f, -p0d99, 1.0f };
-__declspec(align(16)) static const __m128 gCoordsOffset = { p0d01, 0.0f, p0d01, 0.0f };
-
-static const char* windowClassName = "edit";
 static const char* glCreateShaderProgramvName = "glCreateShaderProgramv";
 static const char* glUseProgramName = "glUseProgram";
-
-/*
-void entrypoint()
-{
-    {
-        // create window and device context
-        const HDC hDC = GetDC(CreateWindowA(windowClassName, 0, WS_POPUP | WS_VISIBLE | WS_MAXIMIZE, 0, 0, 0, 0, 0, 0, 0, 0));
-
-        // initialize OpenGL
-        SetPixelFormat(hDC, ChoosePixelFormat(hDC, &pfd), &pfd);
-        wglMakeCurrent(hDC, wglCreateContext(hDC));
-
-        // init shader (requires OpenGL 4.1)
-        auto glCreateShaderProgramv = (PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress(glCreateShaderProgramvName);
-        const GLuint prog = glCreateShaderProgramv(GL_FRAGMENT_SHADER, 1, (const GLchar**)&shader_glsl);
-        ((PFNGLUSEPROGRAMPROC)wglGetProcAddress(glUseProgramName))(prog);
-
-        // rendering loop
-        for (;;)
-        {
-            // render region
-            glRectfv(gCoords.m128_f32, gCoords.m128_f32 + 2);
-
-            // move rendering region
-            gCoords = _mm_add_ps(gCoords, gCoordsOffset);
-
-            // display
-            glFlush();
-            SwapBuffers(hDC);       
-
-            if (GetAsyncKeyState(VK_ESCAPE))
-                break;
-        }
-    }
-}
-*/
 
 __declspec(naked)
 void entrypoint(void)
 {
     __asm
     {
-        // EPIC HACK - exploit EAX=0 from previous code (crinkler decompressor)
+        // EPIC HACK - exploit EAX==0 from crinkler-generated DLL import code
         // (restore if crashes)
-        // xor eax, eax
+        // xor eax, eax   
+
+        push eax    // for "pop esi"
 
     create_window:
-        // arguments for CreateWindowExA
         push eax    // 0
         push eax    // 0
         push eax    // 0
@@ -148,18 +40,19 @@ void entrypoint(void)
         push eax    // 0
         push WS_POPUP | WS_VISIBLE | WS_MAXIMIZE;
         push eax    // 0
-        push windowClassName;
+        push 0xC019 // atom for "static", http://www.pouet.net/topic.php?which=9894
         push eax    // 0
         call CreateWindowExA
 
-    get_device_context:
+    init_ogl:
         push eax    // window handle (result of CreateWindowExA)
-        call GetDC     
+        call GetDC
 
-    choose_pixel_format:
-        mov edi, eax // store device context in EDI
+        mov edi, eax            // store device context in EDI        
         mov eax, offset pfd
-        push eax    // pixel format for SetPixelFormat
+        mov[eax + 0x4], 0x20    // pdf.dwFlags = PFD_SUPPORT_OPENGL
+
+        push eax    // 'pfd' for SetPixelFormat
             push eax
             push edi    // device context
             call ChoosePixelFormat
@@ -167,17 +60,20 @@ void entrypoint(void)
         push edi    // device context
         call SetPixelFormat
 
-    create_context:
+        push eax
         push edi    // device context
         call wglCreateContext
 
-        push eax
+        push eax    // NOP - makes the code structure regular (push eax; push edi; call)
         push edi    // device context
         call wglMakeCurrent
 
+        // initialize offset of rendering region
+        pop esi     // from "push eax", equal to "mov esi, 0"
+
     load_shader:
         push offset shader_glsl
-        push 0x1    // num of shaders
+        push 1      // num of shaders
         push GL_FRAGMENT_SHADER
             push glCreateShaderProgramvName
             call wglGetProcAddress
@@ -189,26 +85,32 @@ void entrypoint(void)
         call eax    // call glUseProgram
 
     render_loop:
-        
-        push offset gCoords + 0x8
-        push offset gCoords
-        call glRectfv
-
-        push edi    // device context
-        call SwapBuffers
-        call glFlush
-
-        movaps xmm0, [gCoordsOffset]
-        addps xmm0, [gCoords]
-        movaps[gCoords], xmm0
-    
-    keyboard_handling:
         push 0x1B       // VK_ESCAPE
+            push PM_REMOVE
+            push 0
+            push 0
+            push 0
+            push 0
+                push edi    // device context
+                    push 1
+                    push 1
+                    push -1
+                    push -1
+                        push WINDOW_HEIGHT
+                        push 8    // step size
+                        push 0
+                        push esi
+                        call glViewport
+                    call glRects
+                call SwapBuffers
+                call glFlush    // TODO not needed when drawing full-screen quad ???
+            call PeekMessageA   
         call GetAsyncKeyState
-        test ax, ax
+            add esi, 8  // move rendering region
+        test ax, ax     // GetAsyncKeyState(VK_ESCAPE) == 0
         jz render_loop
 
-        // we could return safely, but the process hangs somewhere in nvidia driver...
-        call ExitProcess
+        // HACK: "push 0" omitted, potential access violation
+        call ExitProcess    // TODO get rid of this
     }
 }

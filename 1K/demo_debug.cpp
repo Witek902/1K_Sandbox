@@ -9,8 +9,8 @@
 
 //////////////////////////////////////////////////////////////////////////
 
-#define XRES 1280
-#define YRES 720
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 const char* gWindowClassName = "myWindowClass";
 
@@ -44,9 +44,9 @@ static PIXELFORMATDESCRIPTOR pfd =
 static time_t shaderFileModificationDate = 0;
 static GLuint currentShader = 0;
 
-static const float initialOffset = -1.0f;
-static const float step = 0.01f;
-static float offset = initialOffset;
+static const int blockSize = 128;
+static int xOffset = 0;
+static int yOffset = 0;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -63,8 +63,8 @@ static LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
     if (uMsg == WM_SIZE)
     {
-        offset = initialOffset;
-        glViewport(0, 0, lParam & 0xFFFF, lParam >> 16);
+        xOffset = 0;
+        yOffset = 0;
         return 0;
     }
 
@@ -123,8 +123,8 @@ static int window_init()
         dmScreenSettings.dmSize = sizeof(DEVMODE);
         dmScreenSettings.dmFields = DM_BITSPERPEL | DM_PELSWIDTH | DM_PELSHEIGHT;
         dmScreenSettings.dmBitsPerPel = 32;
-        dmScreenSettings.dmPelsWidth = XRES;
-        dmScreenSettings.dmPelsHeight = YRES;
+        dmScreenSettings.dmPelsWidth = WINDOW_WIDTH;
+        dmScreenSettings.dmPelsHeight = WINDOW_HEIGHT;
 
         if (ChangeDisplaySettings(&dmScreenSettings, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
             return(0);
@@ -144,8 +144,8 @@ static int window_init()
 
     rec.left = 0;
     rec.top = 0;
-    rec.right = XRES;
-    rec.bottom = YRES;
+    rec.right = WINDOW_WIDTH;
+    rec.bottom = WINDOW_HEIGHT;
 
     AdjustWindowRect(&rec, dwStyle, 0);
 
@@ -288,14 +288,22 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 
         if (load_shader())
         {
-            offset = initialOffset;
+            xOffset = 0;
+            yOffset = 0;
         }
 
-        if (offset < 2.0f)
+        if (xOffset < WINDOW_WIDTH && yOffset < WINDOW_HEIGHT)
         {
+            glViewport(xOffset, yOffset, blockSize, blockSize);
+            xOffset += blockSize;
+            if (xOffset >= WINDOW_WIDTH)
+            {
+                xOffset = 0;
+                yOffset += blockSize;
+            }
+
             glUseProgram(currentShader);
-            glRectf(offset, -1.0f, offset + step, 1.0f);
-            offset += step;
+            glRecti(-1, -1, 1, 1);
         }
         else
         {

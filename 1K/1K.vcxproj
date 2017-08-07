@@ -141,7 +141,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>
       </OptimizeReferences>
-      <AdditionalOptions>/CRINKLER  /HASHSIZE:64 /HASHTRIES:100 /COMPMODE:SLOW /ORDERTRIES:1000 /REPORT:report.html /TINYIMPORT /UNSAFEIMPORT /PROGRESSGUI %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/CRINKLER  /PRINT:IMPORTS /HASHSIZE:100 /HASHTRIES:1000 /COMPMODE:SLOW /ORDERTRIES:100 /PROGRESSGUI /REPORT:report.html /TINYIMPORT /TINYHEADER /UNSAFEIMPORT %(AdditionalOptions)</AdditionalOptions>
       <EntryPointSymbol>entrypoint</EntryPointSymbol>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;opengl32.lib</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -182,7 +182,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>
       </OptimizeReferences>
-      <AdditionalOptions>/CRINKLER  /HASHSIZE:64 /HASHTRIES:100 /COMPMODE:SLOW /ORDERTRIES:1000 /REPORT:report.html /TINYIMPORT /UNSAFEIMPORT /PROGRESSGUI %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/CRINKLER  /PRINT:IMPORTS /HASHSIZE:100 /HASHTRIES:1000 /COMPMODE:SLOW /ORDERTRIES:100 /PROGRESSGUI /REPORT:report.html /TINYIMPORT /TINYHEADER /UNSAFEIMPORT /PROGRESSGUI %(AdditionalOptions)</AdditionalOptions>
       <EntryPointSymbol>entrypoint</EntryPointSymbol>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;opengl32.lib</AdditionalDependencies>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
